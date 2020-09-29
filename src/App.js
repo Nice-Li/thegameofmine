@@ -1,24 +1,38 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, {useEffect, useReducer, useState} from 'react';
 import './App.css';
 
+import state from './store/state'
+import reducer from './store/reducer'
+import {loginAction} from './store/actions'
+
+import NavRoute from './router/index'
+
+import getName from './until/getRandomName'
+
+const name = getName()
+sessionStorage.setItem('name', name)
+
+
+
+
 function App() {
+  const [login, loginDispatch] = useReducer(reducer, state)
+  const [, setUpdate] = useState({})
+  useEffect(()=>{
+    setTimeout(()=>{
+      loginDispatch({type:loginAction, payload:{name:name}})
+      setUpdate({})
+    },1000)
+
+  },[])
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+
+      <section className="App-main">
+      <NavRoute ></NavRoute>
+      </section>
+      <footer className="App-footer">{login.name}</footer>
     </div>
   );
 }

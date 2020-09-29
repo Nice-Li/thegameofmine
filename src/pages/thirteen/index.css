@@ -1,0 +1,19 @@
+.number-show{
+  color:black;
+  font-size:10rem;
+  margin:10px auto;
+}
+
+.btn-box{
+  display:flex;
+}
+.btn-click{
+  flex:1;
+  background-color: #fff;
+  height:40px;
+  border-radius:4px;
+  border:1px solid #aaa;
+}
+.btn-click:nth-of-type(1){
+  border-right:none;
+}
