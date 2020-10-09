@@ -14,10 +14,12 @@
   flex:1;
   color:black;
   font-size:20px;
+  height:35px;
   border:1px solid black;
   border-left:none;
-  padding:3px;
   cursor:pointer;
+  box-sizing: border-box;
+  line-height:35px;
 }
 .number-box > span:nth-of-type(1){
   border-left:1px solid black;

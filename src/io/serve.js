@@ -14,8 +14,9 @@ const Shudu = require('./shudu')
 const io = Socket(server)
 
 let num = 0
+let randomNum = 23;
+
 io.on('connection', socket => {
-  console.log('connection')
   
   socket.on('thir/sentNum', data => {
  
@@ -25,13 +26,15 @@ io.on('connection', socket => {
     io.emit('thir/changeNum', {num: num.toFixed(2),eventName:data.name,eventDetail:`摇出了 ${data.num}`})
     
   })
-  socket.on('thir/zero', (data) => {
+  socket.on('thir/restart', (data) => {
     num = data.num
+    randomNum = getRandomNumber(23, 41)
     io.emit('thir/changeNum', {num: 0})
     io.emit('thir/resetList',{
       eventName:data.name,
       eventDetail:`重新开始了游戏`
     })
+    io.emit('thir/setFirstNumber', {num: randomNum})
 
   })
   socket.on('thir/joinName', data=>{
@@ -88,3 +91,9 @@ app.use(router.routes());
 // 处理405 501
 app.use(router.allowedMethods());
 server.listen('8080',()=>{console.log('8080 running')})
+
+
+
+function getRandomNumber(min, max){
+  return Math.floor(Math.random() * (max - min + 1))
+}

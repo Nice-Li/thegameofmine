@@ -17,6 +17,7 @@ const socket = io('ws://localhost:8080')
 
 export default (props)=>{
 
+  const [randomNum, setRandomNum] = useState(0)
   const [isJoin, setJoin] = useState(false)
   const [num, setNum ] = useState(0)
   const [list, setList] = useState([])
@@ -24,6 +25,10 @@ export default (props)=>{
   const [login, ] = useReducer(reducer, state)
 
   useEffect(()=>{
+    socket.emit('thir/getFirstNumber')
+    socket.addEventListener('thir/setFirstNumber', data=>{
+      setRandomNum(data.randomNum)
+    })
     socket.addEventListener('thir/changeNum', data=>{
       setRemList(l=>{
         return l.concat(data)
@@ -74,17 +79,17 @@ export default (props)=>{
     <>
       <button className='btn-click' onClick={
         ()=>{
-          if(num > 13){
+          if(num > randomNum){
             return 
           }
-          let RNum = getANumber(num, 13, 1)
+          let RNum = getANumber(num, randomNum, 1)
           socket.emit('thir/sentNum', {num:RNum, name:login.name})
         }
       }>click</button>
 
       <button className='btn-click' onClick={
         ()=>{
-          socket.emit('thir/zero', {num:0,name:login.name})
+          socket.emit('thir/restart', {num:0,name:login.name})
 
         }
       }>restart</button>

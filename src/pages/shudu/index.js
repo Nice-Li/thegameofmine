@@ -51,6 +51,10 @@ export default ()=>{
   }, [])
 
   useEffect(()=>{
+    setShuduDispatch({type:setUserNumList, payload:{
+      userNumList:resList
+    }})
+
     let resFlag = resList.length !== 0 && resList.every(ele=>{
       return !!ele.num
     })
@@ -63,16 +67,14 @@ export default ()=>{
       let res = getListCheckResult(newList)
       res && setShowTips('success')
     }
-    return ()=>{
-      setShuduDispatch({type:setUserNumList, payload:{
-        userNumList:resList
-      }})
-    }
+   
+
+
   }, [resList])
 
 
   return <div className='app-content'>
-    <h2>数独</h2>
+    <h2>数 独</h2>
     <p className='number-box' onClick={(e)=>{
       if(+e.target.textContent){
         setShowNum(+e.target.textContent)
@@ -89,17 +91,13 @@ export default ()=>{
         })
       }
     </p>
-    <div className="main" onClick={(e)=>{
-      // setResList(l=>{
-      //   l.splice()
-      // })
-    }}>
+    <div className="main" >
       {
         resList.map((ele, index)=>{
           // 需要判断 disable
           return <div className={
             `main-item ${ele.disable? 'disable' :'active'}`
-          } onClick={()=>{
+          }  onClick={()=>{
             if(ele.disable){
               return 
             }
