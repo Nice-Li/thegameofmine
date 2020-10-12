@@ -18,27 +18,43 @@ let randomNum = 23;
 
 io.on('connection', socket => {
   
-  socket.on('thir/sentNum', data => {
- 
-    io.emit('thir/setAsyncList', {num: data.num})
+  socket.on('thir/getNum', data => {
+    let detail = null;
+    
     num += data.num
-
-    io.emit('thir/changeNum', {num: num.toFixed(2),eventName:data.name,eventDetail:`摇出了 ${data.num}`})
+    if(num >= randomNum){
+      detail = `触发了本次节点！！！`
+    }else{
+      detail = `摇出了 ${data.num}`
+    }
+    io.emit('thir/setNum', {
+      num: num.toFixed(2),
+      eventName:data.name,
+      eventDetail:detail,
+      originNum:data.num,
+      resolteNum:randomNum
+    })
     
   })
   socket.on('thir/restart', (data) => {
     num = data.num
-    randomNum = getRandomNumber(23, 41)
-    io.emit('thir/changeNum', {num: 0})
-    io.emit('thir/resetList',{
+    randomNum = getRandomNumber(13, 31)
+    console.log(randomNum)
+    io.emit('thir/restart',{
       eventName:data.name,
-      eventDetail:`重新开始了游戏`
+      eventDetail:`重新开始了游戏`,
+      originNum:0,
+      resolteNum:randomNum
     })
-    io.emit('thir/setFirstNumber', {num: randomNum})
+
 
   })
   socket.on('thir/joinName', data=>{
-    io.emit('thir/getLoginName', {eventName:data.name,eventDetail:'加入了游戏！'})
+    io.emit('thir/getLoginName', {
+      eventName:data.name,
+      eventDetail:'加入了游戏！',
+      resolteNum:randomNum
+    })
   })
   socket.on('thir/quiteGame', data =>{
     io.emit('thir/getLoginName', {
@@ -95,5 +111,5 @@ server.listen('8080',()=>{console.log('8080 running')})
 
 
 function getRandomNumber(min, max){
-  return Math.floor(Math.random() * (max - min + 1))
+  return Math.floor(Math.random() * (max - min + 1) + min)
 }

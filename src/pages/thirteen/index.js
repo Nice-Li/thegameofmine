@@ -25,36 +25,41 @@ export default (props)=>{
   const [login, ] = useReducer(reducer, state)
 
   useEffect(()=>{
-    socket.emit('thir/getFirstNumber')
-    socket.addEventListener('thir/setFirstNumber', data=>{
-      setRandomNum(data.randomNum)
-    })
-    socket.addEventListener('thir/changeNum', data=>{
+    
+
+    socket.addEventListener('thir/setNum', data=>{
       setRemList(l=>{
-        return l.concat(data)
+        
+        let r = l.concat([])
+        r.unshift(data)
+        return r
       })
       setNum(data.num)
-
-    })
-    socket.addEventListener('thir/setAsyncList', data=>{
+      setRandomNum(data.resolteNum)
       setList(l=>{
-        return l.concat(data.num)
+        return l.concat(data.originNum)
       })
     })
-    socket.addEventListener('thir/resetList', (data)=>{
+
+    socket.addEventListener('thir/restart', (data)=>{
       setList([])
       setRemList([{
         eventName:data.eventName,
         eventDetail:data.eventDetail
       }])
+      setNum(data.originNum)
+      setRandomNum(data.resolteNum)
     })
     socket.on('thir/getLoginName', data=>{
       setRemList(l=>{
         return l.concat(data)
       })
+      setRandomNum(data.resolteNum)
     })
     return ()=>{
-      socket.emit('thir/quiteGame', {name:login.name})
+      if(isJoin){
+        socket.emit('thir/quiteGame', {name:login.name})
+      }
       socket.removeAllListeners()
     }
   },[])
@@ -79,11 +84,11 @@ export default (props)=>{
     <>
       <button className='btn-click' onClick={
         ()=>{
-          if(num > randomNum){
+          if(num >= randomNum){
             return 
           }
           let RNum = getANumber(num, randomNum, 1)
-          socket.emit('thir/sentNum', {num:RNum, name:login.name})
+          socket.emit('thir/getNum', {num:RNum, name:login.name})
         }
       }>click</button>
 
