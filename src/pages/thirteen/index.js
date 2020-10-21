@@ -1,8 +1,8 @@
 import React,{useState, useEffect, useReducer} from 'react'
-// import socket from '../../until/socket'
+import socket from '../../until/socket'
 import './index.css'
 import RemBox from '../../components/remenber/index'
-import io from 'socket.io-client'
+// import io from 'socket.io-client'
 
 import state from '../../store/state'
 import reducer from '../../store/reducer'
@@ -13,7 +13,7 @@ function getANumber(min, max, step=0.5){
   return Math.round(Math.random() * (max - min + step) * 100 ) / 400
 }
 
-const socket = io('ws://localhost:8080')
+// const socket = io('ws://localhost:8080')
 
 export default (props)=>{
 
