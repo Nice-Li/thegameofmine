@@ -17,11 +17,11 @@ let num = 0
 let randomNum = 23;
 
 // card section
-let joinCardNumber = null;
-let originCards = getOriginCards().concat(getOriginCards())
+// let joinCardNumber = null;
+let originCards = getOriginCards() //.concat(getOriginCards())
 let cardsList = []
 let cardUser = []
-
+// let currentTurnIndex = 0
 
 io.on('connection', socket => {
   
@@ -84,7 +84,7 @@ io.on('connection', socket => {
         list.push({
           userId:index,
           userName:ele.userName,
-          card:cardsList.splice(0, (5 - ele.cardsCount))
+          card:cardsList.splice(0, 5)
         })
         ele.cardsCount = 5
       })
@@ -94,115 +94,110 @@ io.on('connection', socket => {
       })
     }
   })
-  socket.on('cards/passMyTurn', data=>{
-    if(data.passCount){
-      cardUser.forEach(ele=>{
-        if(ele.userName === data.user){
-          ele.passCount = data.passCount
-        }
-      })
-    }
 
-    if(cardUser.every(ele=>{
-      return ele.passCount
-    })){
-      // gameover
-      io.emit('cards/gameOver', {
-        isGameOver:true
-      })
-      // cardsList  
-      return 
-    }
-    let turn = null
-    if(data.youIndex + 1 >= cardUser.length){
-      turn = 0
-    }else{
-      turn = data.youIndex + 1
-    }
-
-    io.emit('cards/setYouTurn', {
-      turnIndex:turn,
-      userName:data.user
-    })
-  })
   socket.on('cards/change', data=>{
-    let turn = null
-    cardUser.forEach(ele=>{
-      if(ele.userName === data.user){
-        ele.cardsCount -= 1;
-      }
-    })
+    
+    let index = data.youIndex
+    cardUser[index].cardsCount -= 1;
+     
+    let turn = getCurrentTurn(cardUser, cardUser.length, index)
 
-    if(data.youIndex + 1 >= cardUser.length){
-      turn = 0
-    }else{
-      turn = data.youIndex + 1
-    }
     io.emit('cards/setShowCard', {
       card:data.card,
       turnIndex:turn,
       cardColor:data.cardColor
     })
+
   })
+
   socket.on('cards/haveNewCards', data=>{
+
     let len = cardsList.length;
-    let card = null
-    if(len > 0 && len <= 5){
-      card = cardsList.splice(0, len)
-    }else if(len === 0){
-      card = []
-    }else{
-      card = cardsList.splice(0, 5)
+
+    if(len === 0 && data.count === 0){
+      cardUser[data.youIndex].isGameOver = true;
+      console.log('119  getScore')
+      socket.emit('cards/getScore', {
+        index:data.youIndex
+      })
+
+      return 
     }
-    cardUser.forEach(ele=>{
-      if(ele.userName === data.user){
-        ele.cardsCount = 5
-      }
-    })
+
+    let card = getCurrentCard(len, cardsList, data.count)
+
+
+    cardUser[data.youIndex].cardsCount = 5;
     socket.emit('cards/giveNewCards', {
-      card
+      card:card
 
     })
   })
   socket.on('cards/giveUp', data=>{
+    if(cardsList.length === 0 && data.count === 0){
+      cardUser[data.youIndex].isGameOver = true;
+      console.log('139  getScore')
 
-    cardUser.forEach(ele=>{
-      if(ele.userName === data.user){
-        ele.cardsCount -= 1;
-      }
-    })
+      socket.emit('cards/getScore', {
+        index:data.youIndex
+      })
 
-    let turn = null;
-    if(data.youIndex + 1 >= cardUser.length){
-      turn = 0
-    }else{
-      turn = data.youIndex + 1
+      // return 
     }
 
     let index = data.youIndex;
+    cardUser[index].cardsCount -= 1;
 
+     let turn = getCurrentTurn(cardUser, cardUser.length, index)
     let list = []
     let newArr = cardUser.slice(index).concat(cardUser.slice(0, index))
 
     newArr.forEach(ele=>{
 
       let len = cardsList.length;
-      let card = null
-      if(len > 0 && len <= (5-ele.cardsCount)){
-        card = cardsList.splice(0, len)
-      }else if(len === 0){
-        card = []
-      }else{
-        card = cardsList.splice(0, 5-ele.cardsCount)
-      }
+      let card = getCurrentCard(len, cardsList, ele.cardsCount)
+
       ele.cardsCount = 5
+
       list.push({
         userName:ele.userName,
         card:card,
-        turnIndex:turn
       })
     })
-    io.emit('cards/getNewCards', {list:list})
+
+
+    io.emit('cards/getNewCards', {
+      list:list,
+      turnIndex:turn
+    })
+
+  })
+
+  socket.on('cards/postScore', data=>{
+    cardUser[data.index].passCount = data.passCount
+
+    let flag = cardUser.every(ele=>{
+      return ele.isGameOver
+    })
+    console.log(flag)
+    if(flag){
+      let arr = []
+      cardUser.forEach(ele=>{
+        arr.push({
+          userName:ele.userName,
+          userCount:ele.passCount
+        })
+
+
+      })
+      io.emit('cards/gameOver', {
+        isGameOver:true,
+        countList:arr,
+        color:0
+      })
+
+      originCards = getOriginCards()
+    }
   })
 })
 
@@ -285,7 +280,7 @@ function getOriginCards(){
   let origin = [];
 
   ['c', 'd', 'h', 's'].forEach((ele, index)=>{
-    for(let i = 6 ; i < 11; i ++ ){
+    for(let i = 1 ; i < 5; i ++ ){
       origin.push({
         cardNum:i,
         cardColor:ele
@@ -333,16 +328,48 @@ function getOriginCardsLast(){
   origin.push({
     cardNum:0,
     cardColor:'big'
-  }, {
-    cardNum:0,
-    cardColor:'big'
-  },{
-    cardNum:0,
-    cardColor:'small'
   },{
     cardNum:0,
     cardColor:'small'
   })
 
   return origin
+}
+
+
+
+
+
+function getCurrentUserIndex(youIndex, len){
+  if(youIndex + 1 >= len){
+    return 0
+  }else{
+    return  youIndex + 1
+  }
+}
+
+
+function getCurrentCard(len, list, step){
+  if(len > 0 && len <= 5 - step){
+    return list.splice(0, len)
+  }else if(len === 0){
+    return []
+  }else{
+    return list.splice(0, 5 - step)
+  }
+}
+
+
+
+function getCurrentTurn(arr, len, youIndex){
+  let turn = getCurrentUserIndex(youIndex, len)
+  for(let i = 0 ; i < len; i ++){
+    if(arr[turn].isGameOver){
+      turn = getCurrentUserIndex(turn, len)
+      continue
+    }else{
+      return turn 
+    }
+  }
+  return turn 
 }

@@ -10,7 +10,7 @@ import './index.css'
 
 
 export default ()=>{
-  const [, setUpdate] = useState({})
+
   const [isJoin, setIsJoin] = useState(false)
   const [card, setCard] = useState([])
   const [userList, setUserList] = useState([])
@@ -28,7 +28,8 @@ export default ()=>{
   const [changeCardColor, setChangeCardColor] = useState(false)
   const [passCount, setPassCount] = useState(0)
   const [flag, setFlag] = useState(false)
-
+  const[passCountList, setPassCountList] = useState([])
+  const [gameModeHard, setGameModeHard] = useState(false)
   useEffect(()=>{
     
     socket.on('cards/startGame', data => {
@@ -55,7 +56,6 @@ export default ()=>{
       }))
     })
 
-    
 
     socket.on('cards/error', data=>{
       setErrorTips(data.errorMsg)
@@ -64,8 +64,24 @@ export default ()=>{
     socket.on('cards/gameOver', data=>{
       if(data.isGameOver){
         setGameOver(true)
+        setCardColor(0)
+        setShowCard({
+          cardNum:0,
+          cardColor:0
+        })
+        setErrorTips('')
       }
+      setPassCountList(l=>{
+        return l.concat(data.countList)
+      })
+
     })
+
+    socket.on('cards/giveNewCards', data=>{ 
+      console.log(data.card)
+      setCard(data.card)
+    })
+
   },[])
 
   useEffect(()=>{
@@ -84,60 +100,54 @@ export default ()=>{
     })
     socket.on('cards/getNewCards', data => {
       
+      
+      if(youIndex === data.turnIndex){
+        setYouTurn(true)
+      }else{
+        setYouTurn(false)
+      }
+
       let res = data.list.filter(ele=>{
         if(ele.userName === state.name){
           return true
         }
         return false
       })
-      if(youIndex === res[0].turnIndex){
-        setYouTurn(true)
-      }else{
-        setYouTurn(false)
-      }
 
       setCard(l => {
-        let arr =  l.concat(res[0].card)
-        if(arr.length === 0){
-          socket.emit('cards/passMyTurn', {
-            user:state.name,
-            youIndex:youIndex,
-            passCount:passCount
-          })
-        }
-
-        return arr
+        return l.concat(res[0].card)
       })
     })
 
-    socket.on('cards/setYouTurn', data=>{
-      if(youIndex === data.turnIndex){
-        setYouTurn(true)
-      }else{
-        setYouTurn(false)
-      }
-    })
 
-    socket.on('cards/giveNewCards', data=>{
-      if(data.card.length === 0){
-        // setGameOver(true)
-        socket.emit('cards/passMyTurn', {
-          user:state.name,
-          youIndex:youIndex,
-          passCount:passCount
-        })
-        return
-      }
-      setCard(data.card)
+
+
+
+
+
+
+    return ()=>{
+      socket.off('cards/setShowCard')
+      socket.off('cards/getNewCards')
+
+
+    }
+  },[youIndex])
+
+  useEffect(()=>{
+    socket.on('cards/getScore', data=>{
+      console.log('getscore running')
+      socket.emit('cards/postScore', {
+        index:data.index,
+        passCount:passCount
+      })
     })
 
     return ()=>{
-      socket.off('cards/giveNewCards')
-      socket.off('cards/setShowCard')
-      socket.off('cards/getNewCards')
-      socket.off('cards/setYouTurn')
+      socket.off('cards/getScore')
     }
-  },[youIndex, passCount])
+  },[passCount])
+
 
   return <div className="card-sec">
     <div className="drogon-main">
@@ -182,6 +192,13 @@ export default ()=>{
                   })
                   setChangeCardColor(false)
 
+                  if(card.length === 0){
+                    socket.emit('cards/haveNewCards', {
+                      user:state.name,
+                      youIndex:youIndex,
+                      count:0
+                    })
+                  }
                 }}>{ele.title}</button>)
               })
             }
@@ -189,10 +206,14 @@ export default ()=>{
             
           </div> : ''
           }
-
+        {
+          passCountList.map((ele, index)=>{
+          return <p key={index}>{ele.userName}弃牌总和为:{ele.userCount}</p>
+          })
+        }
         <div className="card-bottom">
           {
-            isYouTurn ? (
+            isYouTurn && !isGameover? (
             <div className="btn-list">
               <button onClick={()=>{
                 if(!flag){
@@ -224,7 +245,8 @@ export default ()=>{
                   // 当出牌后 卡牌 为0 自动摸牌
                   socket.emit('cards/haveNewCards', {
                     user:state.name,
-
+                    youIndex:youIndex,
+                    count:0
                   })
                 }
 
@@ -240,14 +262,24 @@ export default ()=>{
                   
                 })
                 setFlag(false)
-                
-                socket.emit('cards/giveUp', {
-                  youIndex:youIndex,
-                  user:state.name,
 
-                })
+                if(gameModeHard){
+                  socket.emit('cards/haveNewCards', {
+                    user:state.name,
+                    youIndex:youIndex,
+                    count:card.length
+                  })
+                }else{
+                  socket.emit('cards/giveUp', {
+                    youIndex:youIndex,
+                    user:state.name,
+                    count:card.length
+
+                  })
+                }             
+              
               }}>弃牌</button>
-              <button></button>
+
           </div> ) : (
             ''
           )
