@@ -46,7 +46,7 @@ io.on('connection', socket => {
   socket.on('thir/restart', (data) => {
     num = data.num
     randomNum = getRandomNumber(13, 31)
-    console.log(randomNum)
+
     io.emit('thir/restart',{
       eventName:data.name,
       eventDetail:`重新开始了游戏`,
@@ -114,9 +114,18 @@ io.on('connection', socket => {
 
     let len = cardsList.length;
 
+    if(data.auth){
+      let index = data.youIndex;
+
+      let turn = getCurrentTurn(cardUser, cardUser.length, index)
+      io.emit('cards/changeCurrentTurnIndex', {
+        turnIndex:turn
+      })
+    }
+
     if(len === 0 && data.count === 0){
       cardUser[data.youIndex].isGameOver = true;
-      console.log('119  getScore')
+   
       socket.emit('cards/getScore', {
         index:data.youIndex
       })
@@ -124,19 +133,20 @@ io.on('connection', socket => {
       return 
     }
 
+    
+
     let card = getCurrentCard(len, cardsList, data.count)
 
-
-    cardUser[data.youIndex].cardsCount = 5;
+    cardUser[data.youIndex].cardsCount = card.length + data.count;
     socket.emit('cards/giveNewCards', {
-      card:card
+      card:card,
 
     })
   })
   socket.on('cards/giveUp', data=>{
     if(cardsList.length === 0 && data.count === 0){
       cardUser[data.youIndex].isGameOver = true;
-      console.log('139  getScore')
+
 
       socket.emit('cards/getScore', {
         index:data.youIndex
@@ -173,13 +183,20 @@ io.on('connection', socket => {
 
   })
 
+  socket.on('cards/getGameModeHard', data=>{
+    
+      io.emit('cards/setGameModeHard', {
+        mode:data.mode
+      })
+    
+  })
   socket.on('cards/postScore', data=>{
     cardUser[data.index].passCount = data.passCount
 
     let flag = cardUser.every(ele=>{
       return ele.isGameOver
     })
-    console.log(flag)
+
     if(flag){
       let arr = []
       cardUser.forEach(ele=>{
@@ -187,7 +204,7 @@ io.on('connection', socket => {
           userName:ele.userName,
           userCount:ele.passCount
         })
-
+        ele.isGameOver = false
 
       })
       io.emit('cards/gameOver', {
@@ -215,7 +232,7 @@ router.get('/getShudu', ctx=>{
 })
 .options('/getNewShuduList', ctx=>{
   setOptionsReq(ctx)
-  console.log('options running')
+
   ctx.body = null
 })
 .post('/getNewShuduList', ctx=>{
@@ -268,7 +285,7 @@ function setOptionsReq(ctx){
 app.use(router.routes());
 // 处理405 501
 app.use(router.allowedMethods());
-server.listen('8080',()=>{console.log('8080 running')})
+server.listen('8080')
 
 
 
@@ -276,11 +293,11 @@ function getRandomNumber(min, max){
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
 
-function getOriginCards(){
+function getOriginCardsOther(){
   let origin = [];
 
   ['c', 'd', 'h', 's'].forEach((ele, index)=>{
-    for(let i = 1 ; i < 5; i ++ ){
+    for(let i = 1 ; i < 3; i ++ ){
       origin.push({
         cardNum:i,
         cardColor:ele
@@ -313,7 +330,7 @@ function getArrRandomList(arr){
 }
 
 
-function getOriginCardsLast(){
+function getOriginCards(){
   let origin = [];
 
   ['c', 'd', 'h', 's'].forEach((ele, index)=>{

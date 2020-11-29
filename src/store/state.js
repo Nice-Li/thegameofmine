@@ -1,5 +1,5 @@
 export default {
-  name:'zx',
+  name:'',
   numList:null,
   userNumList:null
 }

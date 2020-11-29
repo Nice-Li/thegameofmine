@@ -54,6 +54,9 @@ export default ()=>{
         }
         return false
       }))
+      setPassCountList(l=>{
+        return []
+      })
     })
 
 
@@ -70,25 +73,31 @@ export default ()=>{
           cardColor:0
         })
         setErrorTips('')
+        setYouTurn(false)
       }
       setPassCountList(l=>{
         return l.concat(data.countList)
       })
-
+      setPassCount(0)
+      setErrorTips('欢迎加入新游戏...')
     })
 
     socket.on('cards/giveNewCards', data=>{ 
-      console.log(data.card)
-      setCard(data.card)
+      setCard(l=>l.concat(data.card))
     })
 
+    socket.on('cards/setGameModeHard', data=>{
+      setGameModeHard(data.mode)
+    })
+
+
+    
   },[])
 
   useEffect(()=>{
 
     socket.on('cards/setShowCard', data => {
-      // setTurnIndex(data.turnIndex)
-      
+
       if(youIndex === data.turnIndex){
         setYouTurn(true)
       }else{
@@ -99,8 +108,7 @@ export default ()=>{
 
     })
     socket.on('cards/getNewCards', data => {
-      
-      
+          
       if(youIndex === data.turnIndex){
         setYouTurn(true)
       }else{
@@ -118,25 +126,23 @@ export default ()=>{
         return l.concat(res[0].card)
       })
     })
-
-
-
-
-
-
-
-
+    socket.on('cards/changeCurrentTurnIndex', data=>{
+      if(youIndex === data.turnIndex){
+        setYouTurn(true)
+      }else{
+        setYouTurn(false)
+      }
+    })
     return ()=>{
       socket.off('cards/setShowCard')
       socket.off('cards/getNewCards')
-
-
+      socket.off('cards/changeCurrentTurnIndex')
     }
   },[youIndex])
 
   useEffect(()=>{
     socket.on('cards/getScore', data=>{
-      console.log('getscore running')
+
       socket.emit('cards/postScore', {
         index:data.index,
         passCount:passCount
@@ -171,7 +177,13 @@ export default ()=>{
 
 
         <div className="card-middle">
-          <img src={`http://www.zxyow.com/images/cards/nice_${`${showCard.cardNum}_${showCard.cardColor}`}.png`} alt=""/>
+          <div className="show-color-box">
+            <img src={`http://www.zxyow.com/images/cards/nice_${`${showCard.cardNum}_${showCard.cardColor}`}.png`} alt=""/>
+          </div>
+         
+          <div className="show-card-box">
+            <img src={`http://www.zxyow.com/images/cards/nice_${cardColor}.png`} alt=""/>
+          </div>
         </div>
 
         { 
@@ -191,6 +203,7 @@ export default ()=>{
                     cardColor:ele.nick
                   })
                   setChangeCardColor(false)
+                  setSelectCardIndex(6)
 
                   if(card.length === 0){
                     socket.emit('cards/haveNewCards', {
@@ -206,6 +219,27 @@ export default ()=>{
             
           </div> : ''
           }
+          {  isGameover ? <div className="gamemode-btn">
+            {
+              <button onClick={()=>{
+                  if(gameModeHard){
+
+
+                    socket.emit('cards/getGameModeHard', {
+                      mode:false
+                    })
+                  }else{
+
+                    socket.emit('cards/getGameModeHard', {
+                      mode:true
+                    })
+                  }
+                }} >{gameModeHard ? `第二模式`:`第一模式`}</button>
+              
+            }
+          </div> : ''}
+       
+
         {
           passCountList.map((ele, index)=>{
           return <p key={index}>{ele.userName}弃牌总和为:{ele.userCount}</p>
@@ -221,9 +255,10 @@ export default ()=>{
 
                   return 
                 }
+                
                 if(seletectCard.cardNum === 11 || seletectCard.cardNum === showCard.cardNum || seletectCard.cardNum === 0){
                   setChangeCardColor(true)
-                  
+                  setYouTurn(false)
                   return 
                 }
                 if( cardColor && cardColor !== seletectCard.cardColor){
@@ -233,7 +268,7 @@ export default ()=>{
                 
                 let res = card.splice(selectCardIndex, 1)
                 setFlag(false)
-                
+                setSelectCardIndex(6)
                 socket.emit('cards/change', {
                   card:res[0],
                   youIndex:youIndex,
@@ -262,12 +297,14 @@ export default ()=>{
                   
                 })
                 setFlag(false)
+                setSelectCardIndex(6)
 
                 if(gameModeHard){
                   socket.emit('cards/haveNewCards', {
                     user:state.name,
                     youIndex:youIndex,
-                    count:card.length
+                    count:card.length,
+                    auth:true
                   })
                 }else{
                   socket.emit('cards/giveUp', {
@@ -291,7 +328,10 @@ export default ()=>{
               <ul>
                 { card.map((ele, index) =>{
                   return (<li className={selectCardIndex === index ? 'active' : ''} onClick={(e)=>{
-                    
+                    if(changeCardColor){
+                      return 
+                    }
+                   
                     setFlag(true)
                     
                     setSeletectCard(ele)
@@ -303,12 +343,11 @@ export default ()=>{
               </ul>
               
             ) : (
-              <p>请参加游戏，或等待当前游戏结束...</p>
+              <p>请等待...</p>
             )
           }
-          
-          <h3>{`title`}</h3>
-          <p>{errorTips}</p>
+          <p>{errorTips}</p>          
+          <h3>{state.name}</h3>
           {
             isJoin ? (
               <button className="restart-box" onClick={()=>{

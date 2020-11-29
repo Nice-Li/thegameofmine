@@ -12,7 +12,7 @@ function randomName (min, max){
 export default function getName(){
   let firstName = firstList[randomName(0, 26)]
   let lastName = ''
-  for(let i = 0; i < 5; i ++){
+  for(let i = 0; i < 2; i ++){
     let num = randomName(0, 26)
     lastName += lastList[num]
   }

@@ -19,10 +19,10 @@ function App() {
   const [login, loginDispatch] = useReducer(reducer, state)
   const [, setUpdate] = useState({})
   useEffect(()=>{
-    setTimeout(()=>{
+    // setTimeout(()=>{
       loginDispatch({type:loginAction, payload:{name:name}})
       setUpdate({})
-    },1000)
+    // },1000)
 
   },[])
 
