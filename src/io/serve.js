@@ -210,11 +210,27 @@ io.on('connection', socket => {
       io.emit('cards/gameOver', {
         isGameOver:true,
         countList:arr,
-        color:0
+        msg:'欢迎加入游戏...'
       })
 
       originCards = getOriginCards()
     }
+  })
+
+  socket.on('userNumberChanged', data => {
+    console.log('window closed')
+    cardUser = cardUser.filter(ele=>{
+      if(ele.userName === data.user){
+        return false
+      }
+      return true
+    })
+
+    io.emit('cards/gameOver',{
+      isGameOver:true,
+      countList:[],
+      msg:`玩家${data.user}退出游戏,请重新开始游戏！`
+    })
   })
 })
 

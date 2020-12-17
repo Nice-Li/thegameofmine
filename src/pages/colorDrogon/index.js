@@ -72,14 +72,13 @@ export default ()=>{
           cardNum:0,
           cardColor:0
         })
-        setErrorTips('')
         setYouTurn(false)
       }
       setPassCountList(l=>{
         return l.concat(data.countList)
       })
       setPassCount(0)
-      setErrorTips('欢迎加入新游戏...')
+      setErrorTips(data.msg)
     })
 
     socket.on('cards/giveNewCards', data=>{ 
@@ -90,9 +89,27 @@ export default ()=>{
       setGameModeHard(data.mode)
     })
 
+    return ()=>{
+
+      socket.emit('userNumberChanged', {
+        user:state.name
+      })
+    }
 
     
   },[])
+
+  useEffect(()=>{
+    if(isJoin){
+      window.onunload = function(){
+
+        socket.emit('userNumberChanged', {
+          user:state.name
+        })
+            
+      }
+    }
+  },[isJoin])
 
   useEffect(()=>{
 
